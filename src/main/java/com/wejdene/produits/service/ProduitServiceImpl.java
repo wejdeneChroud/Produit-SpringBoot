@@ -1,10 +1,14 @@
 package com.wejdene.produits.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.wejdene.produits.dto.ProduitDTO;
 import com.wejdene.produits.entities.Categorie;
 import com.wejdene.produits.entities.Produit;
 import com.wejdene.produits.repos.ProduitRepository;
@@ -15,14 +19,17 @@ public class ProduitServiceImpl implements ProduitService {
 	@Autowired
 	ProduitRepository produitRepository;
 	
+	@Autowired
+	ModelMapper modelMapper;
+	
 	@Override
-	public Produit saveProduit(Produit p) {
-		return produitRepository.save(p);
+	public ProduitDTO saveProduit(ProduitDTO p) {
+		return convertEntityToDto( produitRepository.save(convertDtoToEntity(p)));
 	}
 
 	@Override
-	public Produit updateProduit(Produit p) {
-		return produitRepository.save(p);
+	public ProduitDTO updateProduit(ProduitDTO p) {
+		return convertEntityToDto(produitRepository.save(convertDtoToEntity(p)));
 	}
 
 	@Override
@@ -38,13 +45,15 @@ public class ProduitServiceImpl implements ProduitService {
 	}
 
 	@Override
-	public Produit getProduit(Long id) {
-		return produitRepository.findById(id).get();
+	public ProduitDTO getProduit(Long id) {
+		return convertEntityToDto(produitRepository.findById(id).get());
 	}
 
 	@Override
-	public List<Produit> getAllProduits() {
-		return produitRepository.findAll();
+	public List<ProduitDTO> getAllProduits() {
+		return produitRepository.findAll().stream()
+				.map(this::convertEntityToDto) 
+				.collect(Collectors.toList());
 	}
 
 	@Override
@@ -74,6 +83,37 @@ public class ProduitServiceImpl implements ProduitService {
 	@Override
 	public List<Produit> trierProduitsNomsPrix() {
 		return produitRepository.trierProduitsNomsPrix();
+	}
+
+	@Override
+	public ProduitDTO convertEntityToDto(Produit p) {
+		modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.LOOSE);
+		ProduitDTO produitDTO = modelMapper.map(p, ProduitDTO.class);
+		return produitDTO;
+		
+		/*return ProduitDTO.builder()
+		.idProduit(p.getIdProduit())
+		.nomProduit(p.getNomProduit())
+		.prixProduit(p.getPrixProduit())
+		.dateCreation(p.getDateCreation())
+		.categorie(p.getCategorie())
+		//.nomCat(p.getCategorie().getNomCat())
+		.build();*/
+	}
+
+	@Override
+	public Produit convertDtoToEntity(ProduitDTO produitDto) {
+		Produit produit = new Produit(); 
+		produit = modelMapper.map(produitDto, Produit.class);
+		
+		/*Produit produit = new Produit(); 
+		produit.setIdProduit(produitDto.getIdProduit()); 
+		produit.setNomProduit(produitDto.getNomProduit()); 
+		produit.setPrixProduit(produitDto.getPrixProduit()); 
+		produit.setDateCreation(produitDto.getDateCreation()); 
+		produit.setCategorie(produitDto.getCategorie());*/
+		
+		return produit;
 	}
 
 }
